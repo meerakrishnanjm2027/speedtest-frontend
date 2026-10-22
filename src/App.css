@@ -104,7 +104,7 @@ button:focus-visible {
 .app-shell {
   position: relative;
   min-height: 100svh;
-  max-width: 1200px;
+  max-width: 1360px;
   margin: 0 auto;
   padding: 0 24px;
   display: flex;
@@ -227,8 +227,8 @@ button:focus-visible {
 .gauge-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 22px;
-  margin-bottom: 34px;
+  gap: 28px;
+  margin-bottom: 38px;
 }
 
 /* Each gauge has its own colour pair */
@@ -239,7 +239,7 @@ button:focus-visible {
 .gauge-card {
   position: relative;
   overflow: hidden;
-  padding: 20px 14px 14px;
+  padding: 28px 24px 28px;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 28px;
@@ -269,16 +269,16 @@ button:focus-visible {
   gap: 8px;
 }
 .gauge-icon {
-  width: 30px;
-  height: 30px;
-  padding: 6px;
+  width: 36px;
+  height: 36px;
+  padding: 7px;
   border-radius: 10px;
   color: #fff;
   background: linear-gradient(135deg, var(--c1), var(--c2));
   box-shadow: 0 6px 16px -6px var(--c2);
 }
 .gauge-icon svg { width: 100%; height: 100%; display: block; }
-.gauge-label { font-size: 16px; font-weight: 800; color: var(--text-h); letter-spacing: -0.2px; }
+.gauge-label { font-size: 19px; font-weight: 800; color: var(--text-h); letter-spacing: -0.2px; }
 .gauge-live-dot {
   position: absolute;
   right: 10px;
@@ -289,14 +289,11 @@ button:focus-visible {
   animation: pulse 1s ease-in-out infinite;
 }
 
-/* ── CHANGED: bigger gauge body ── */
 .gauge-body {
   position: relative;
   container-type: inline-size;
-  width: 100%;
-  max-width: 460px;
+  max-width: 440px;
   margin: 0 auto;
-  padding: 4px 0 8px;
 }
 .gauge-svg { display: block; width: 100%; height: auto; overflow: visible; }
 
@@ -304,35 +301,24 @@ button:focus-visible {
 .g-progress { fill: none; stroke-width: 13; stroke-linecap: round; }
 .g-tick { stroke: var(--tick); stroke-width: 1.4; stroke-linecap: round; }
 .g-tick.major { stroke: var(--text-muted); stroke-width: 2.4; }
-.g-tick-label { font-size: 9px; font-weight: 700; fill: var(--text-muted); font-variant-numeric: tabular-nums; }
+.g-tick-label { font-size: 10.5px; font-weight: 700; fill: var(--text-muted); font-variant-numeric: tabular-nums; }
 .g-needle { stroke: var(--c2); stroke-width: 4; stroke-linecap: round; }
 .g-hub { fill: var(--c2); }
 .g-pin { fill: var(--card-bg); }
 
 /* ---------- Big rolling number inside the gauge ---------- */
-/* ── CHANGED: recenter + allow flex ── */
 .gauge-center {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 62%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  pointer-events: none;
+  margin-top: 6px;
+  text-align: center;
 }
 
-/* ── CHANGED: much larger number ── */
 .gauge-number {
-  font-size: clamp(40px, 22cqw, 96px);
+  font-size: 64px;
+  font-size: 22cqw; /* scales with the gauge */
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.04em;
   color: var(--text-h);
-  background: linear-gradient(135deg, var(--c1), var(--c2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
   transition: opacity 0.4s;
 }
 .gauge-number.idle { opacity: 0.35; }
@@ -378,10 +364,10 @@ button:focus-visible {
   min-height: 24px;
 }
 .gauge-unit {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 800;
   letter-spacing: 2px;
-  color: var(--text-muted);
+  color: var(--c2);
 }
 
 /* ▲ / ▼ change versus the previous test */
@@ -518,10 +504,6 @@ button:focus-visible {
   .history-item { flex-direction: column; align-items: flex-start; }
   .app-footer { flex-direction: column; gap: 6px; }
   .toast-container { top: auto; bottom: 16px; right: 16px; }
-
-  /* ── CHANGED: mobile gauge tweaks ── */
-  .gauge-body { max-width: 100%; }
-  .gauge-number { font-size: clamp(36px, 26cqw, 72px); }
 }
 
 /* ---------- Reduced motion ---------- */
