@@ -2,7 +2,7 @@ import { useState } from 'react';
 import './App.css';
 
 // Change this to your backend URL (Keep as localhost for local testing)
-const API_URL = 'http://localhost:8000'; 
+const API_URL = 'https://speedtest-backend-ofvb.onrender.com'; 
 
 function App() {
   const [ping, setPing] = useState(null);
