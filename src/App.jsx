@@ -173,7 +173,7 @@ function Gauge({ tone, label, unit, value, marks, decimals, active, isFinal, pre
       </div>
 
       <div className="gauge-body">
-        <svg viewBox="0 0 300 280" className="gauge-svg" role="img" aria-label={`${label}: ${(value ?? 0).toFixed(decimals)} ${unit}`}>
+        <svg viewBox="0 0 300 236" className="gauge-svg" role="img" aria-label={`${label}: ${(value ?? 0).toFixed(decimals)} ${unit}`}>
           <defs>
             <linearGradient id={`grad-${tone}`} x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" style={{ stopColor: 'var(--c1)' }} />
@@ -212,7 +212,7 @@ function Gauge({ tone, label, unit, value, marks, decimals, active, isFinal, pre
           </g>
         </svg>
 
-        {/* Big rolling number sits inside the gauge */}
+        {/* Big rolling number sits at the bottom of the card */}
         <div className="gauge-center">
           <div className={`gauge-number ${value == null ? 'idle' : ''}`}>
             <RollingNumber value={value} decimals={decimals} />
