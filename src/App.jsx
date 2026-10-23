@@ -3,7 +3,42 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './App.css';
 
 const API_URL = 'https://speedtest-backend-ofvb.onrender.com'; // unchanged
+// Add these state variables at the top of your App component
+const [networkInfo, setNetworkInfo] = useState(null);
+const [isFetchingInfo, setIsFetchingInfo] = useState(false);
 
+// Add this function to fetch network details
+const fetchNetworkInfo = async () => {
+  setIsFetchingInfo(true);
+  try {
+    const res = await fetch(`${API_URL}/network-info`);
+    const data = await res.json();
+    setNetworkInfo(data);
+  } catch (error) {
+    console.error("Failed to fetch network info:", error);
+  } finally {
+    setIsFetchingInfo(false);
+  }
+};
+
+// Call this when the page loads OR right before starting the test
+useEffect(() => {
+  fetchNetworkInfo();
+}, []);
+
+// Update your UI to display the info (Add this above your "Start Test" button)
+<div style={{ marginBottom: '20px', fontSize: '14px', color: '#aaa' }}>
+  {networkInfo ? (
+    <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
+      <span>🌍 <strong>Server:</strong> {networkInfo.server_location}</span>
+      <span>📡 <strong>ISP:</strong> {networkInfo.isp}</span>
+      <span>🔗 <strong>IP:</strong> {networkInfo.ip}</span>
+      <span>📍 <strong>Location:</strong> {networkInfo.city}, {networkInfo.country}</span>
+    </div>
+  ) : (
+    <span>{isFetchingInfo ? "Detecting network..." : "Network info unavailable"}</span>
+  )}
+</div>
 /* ---------------- Helpers ---------------- */
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
