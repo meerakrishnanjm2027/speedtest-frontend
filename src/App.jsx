@@ -4,7 +4,6 @@ import './App.css';
 
 const API_URL = 'https://speedtest-backend-ofvb.onrender.com'; // unchanged
 
-
 /* ---------------- Helpers ---------------- */
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -308,6 +307,11 @@ function App() {
       return [];
     }
   });
+
+  /* ── NEW: network info state ── */
+  const [networkInfo, setNetworkInfo] = useState(null);
+  const [isFetchingInfo, setIsFetchingInfo] = useState(false);
+
   const toastId = useRef(0);
 
   useEffect(() => {
@@ -326,6 +330,24 @@ function App() {
     const id = setInterval(() => setElapsed(((performance.now() - start) / 1000).toFixed(1)), 100);
     return () => clearInterval(id);
   }, [isTesting]);
+
+  /* ── NEW: fetch network info ── */
+  const fetchNetworkInfo = useCallback(async () => {
+    setIsFetchingInfo(true);
+    try {
+      const res = await fetch(`${API_URL}/network-info`);
+      const data = await res.json();
+      setNetworkInfo(data);
+    } catch (error) {
+      console.error('Failed to fetch network info:', error);
+    } finally {
+      setIsFetchingInfo(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNetworkInfo();
+  }, [fetchNetworkInfo]);
 
   const pushToast = useCallback((type, title, message) => {
     setToasts((p) => [...p, { id: ++toastId.current, type, title, message }]);
@@ -358,7 +380,7 @@ function App() {
       setStatus('Testing download…');
       const dlStart = performance.now();
       const resp = await fetch(`${API_URL}/download?size=25000000`);
-      if (!resp.ok) throw new Error(`Download failed (${resp.status})`); // FIX: don't time an error page
+      if (!resp.ok) throw new Error(`Download failed (${resp.status})`);
       const reader = resp.body.getReader();
       let received = 0;
       let lastUpdate = 0;
@@ -368,13 +390,11 @@ function App() {
         received += value.length;
         const now = performance.now();
         const secs = (now - dlStart) / 1000;
-        // FIX: live reading = bytes received so far / time so far
         if (secs > 0.15 && now - lastUpdate > 100) {
           lastUpdate = now;
           setLiveDl(calculateMbps(received, secs));
         }
       }
-      // FIX: final = total bytes / total time
       const dl = calculateMbps(received, (performance.now() - dlStart) / 1000);
       setLiveDl(dl);
       setDownloadSpeed(dl);
@@ -486,7 +506,44 @@ function App() {
             isFinal={done.upload && phase !== 'upload'} prev={prevResult?.upload}
           />
         </div>
-    
+
+        {/* ── NEW: network info strip ── */}
+        <div className="network-info">
+          {networkInfo ? (
+            <>
+              <span className="net-item">
+                <span className="net-icon">📡</span>
+                <strong>ISP:</strong>&nbsp;{networkInfo.isp || 'Unknown'}
+              </span>
+              <span className="net-divider" />
+              <span className="net-item">
+                <span className="net-icon">📍</span>
+                <strong>Location:</strong>&nbsp;{networkInfo.city || 'Unknown'}
+                {networkInfo.country ? `, ${networkInfo.country}` : ''}
+              </span>
+              <span className="net-divider" />
+              <span className="net-item">
+                <span className="net-icon">🌍</span>
+                <strong>Server:</strong>&nbsp;{networkInfo.server_location || 'Unknown'}
+              </span>
+              <span className="net-divider" />
+              <span className="net-item">
+                <span className="net-icon">🔗</span>
+                <strong>IP:</strong>&nbsp;{networkInfo.ip || 'Unknown'}
+              </span>
+            </>
+          ) : (
+            <span className="net-item net-muted">
+              {isFetchingInfo ? (
+                <>
+                  <span className="net-spinner" /> Detecting network…
+                </>
+              ) : (
+                'Network info unavailable'
+              )}
+            </span>
+          )}
+        </div>
 
         <div className="cta-wrap">
           <button className={`cta-button ${isTesting ? 'running' : ''}`} onClick={runTest} disabled={isTesting}>
