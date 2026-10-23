@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './App.css';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = 'https://speedtest-backend-ofvb.onrender.com';
 
 /* ---------------- Helpers ---------------- */
 
