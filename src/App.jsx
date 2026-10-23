@@ -486,19 +486,7 @@ function App() {
             isFinal={done.upload && phase !== 'upload'} prev={prevResult?.upload}
           />
         </div>
-        // Update your UI to display the info (Add this above your "Start Test" button)
-<div style={{ marginBottom: '20px', fontSize: '14px', color: '#aaa' }}>
-  {networkInfo ? (
-    <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
-      <span>🌍 <strong>Server:</strong> {networkInfo.server_location}</span>
-      <span>📡 <strong>ISP:</strong> {networkInfo.isp}</span>
-      <span>🔗 <strong>IP:</strong> {networkInfo.ip}</span>
-      <span>📍 <strong>Location:</strong> {networkInfo.city}, {networkInfo.country}</span>
-    </div>
-  ) : (
-    <span>{isFetchingInfo ? "Detecting network..." : "Network info unavailable"}</span>
-  )}
-</div>
+    
 
         <div className="cta-wrap">
           <button className={`cta-button ${isTesting ? 'running' : ''}`} onClick={runTest} disabled={isTesting}>
