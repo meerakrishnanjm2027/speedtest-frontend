@@ -70,7 +70,6 @@ function useCountTo(target) {
 }
 
 /* ---------------- Rolling digits (YouTube-subscriber style) ---------------- */
-/* Each digit is a 0–9 strip. Value goes up → the strip slides up; goes down → it slides down. */
 
 const DIGITS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
@@ -95,13 +94,12 @@ function RollingNumber({ value, decimals }) {
   useEffect(() => {
     prev.current = value ?? 0;
   });
-  // Small change → gentle roll (slower). Big jump → quick roll.
   const dur = Math.round(Math.min(900, Math.max(380, 900 - Math.sqrt(change) * 25)));
   const chars = (value ?? 0).toFixed(decimals).split('');
   return (
     <span className="roll" aria-hidden="true">
       {chars.map((c, i) => {
-        const key = chars.length - i; // key from the right so columns stay put
+        const key = chars.length - i;
         return c === '.' ? (
           <span key={key} className="dot">.</span>
         ) : (
@@ -120,7 +118,6 @@ const START = -210;
 const END = 30;
 const SWEEP = END - START;
 
-// Marks are evenly spaced, so small and large speeds both read well.
 const toFraction = (v, marks) => {
   const x = Math.max(0, Math.min(v, marks[marks.length - 1]));
   for (let i = 0; i < marks.length - 1; i++) {
@@ -204,7 +201,6 @@ function Gauge({ tone, label, unit, value, marks, decimals, active, isFinal, pre
             </g>
           ))}
 
-          {/* Needle is drawn pointing right (0°) and rotated by the same angle as the arc */}
           <g style={{ transform: `rotate(${angle}deg)`, transformOrigin: '150px 150px' }}>
             <line x1="140" y1="150" x2="226" y2="150" className="g-needle" />
             <circle cx="150" cy="150" r="10" className="g-hub" />
@@ -212,7 +208,6 @@ function Gauge({ tone, label, unit, value, marks, decimals, active, isFinal, pre
           </g>
         </svg>
 
-        {/* Big rolling number sits at the bottom of the card */}
         <div className="gauge-center">
           <div className={`gauge-number ${value == null ? 'idle' : ''}`}>
             <RollingNumber value={value} decimals={decimals} />
@@ -299,7 +294,7 @@ function App() {
   const [elapsed, setElapsed] = useState('0.0');
   const [theme, setTheme] = useState(initialTheme);
   const [toasts, setToasts] = useState([]);
-  const [prevResult, setPrevResult] = useState(null); // last test, used for the ▲ / ▼ change chip
+  const [prevResult, setPrevResult] = useState(null);
   const [history, setHistory] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('speedtest-history') || '[]');
@@ -308,7 +303,6 @@ function App() {
     }
   });
 
-  /* ── NEW: network info state ── */
   const [networkInfo, setNetworkInfo] = useState(null);
   const [isFetchingInfo, setIsFetchingInfo] = useState(false);
 
@@ -331,7 +325,6 @@ function App() {
     return () => clearInterval(id);
   }, [isTesting]);
 
-  /* ── NEW: fetch network info ── */
   const fetchNetworkInfo = useCallback(async () => {
     setIsFetchingInfo(true);
     try {
@@ -367,7 +360,6 @@ function App() {
     pushToast('start', 'Speed test started', 'Measuring your connection…');
 
     try {
-      /* PING (unchanged flow) */
       setPhase('ping');
       setStatus('Measuring latency…');
       const pStart = performance.now();
@@ -375,7 +367,6 @@ function App() {
       const pingVal = Math.round(performance.now() - pStart);
       setPing(pingVal);
 
-      /* DOWNLOAD (same URL, size and streaming read) */
       setPhase('download');
       setStatus('Testing download…');
       const dlStart = performance.now();
@@ -399,7 +390,6 @@ function App() {
       setLiveDl(dl);
       setDownloadSpeed(dl);
 
-      /* UPLOAD (same POST /upload and FormData) */
       setPhase('upload');
       setStatus('Testing upload…');
       const ulSize = 10000000;
@@ -480,6 +470,21 @@ function App() {
           <p>Measure ping, download and upload in a few seconds.</p>
         </section>
 
+        {/* ── REPLACED: custom network info block ── */}
+        <div style={{ marginBottom: '20px', fontSize: '14px', color: '#666' }}>
+          {networkInfo && networkInfo.ip !== "Unavailable" ? (
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
+              <span>📡 <strong>ISP:</strong> {networkInfo.isp || "Detecting..."}</span>
+              <span> <strong>IP:</strong> {networkInfo.ip || "Detecting..."}</span>
+              <span>📍 <strong>Location:</strong>{' '}
+                {[networkInfo.city, networkInfo.country].filter(Boolean).join(", ") || "Detecting..."}
+              </span>
+            </div>
+          ) : (
+            <span>⚠️ Network info unavailable. Retrying...</span>
+          )}
+        </div>
+
         <div className={`live-bar ${isTesting ? 'active' : ''}`}>
           {PHASES.map((p) => (
             <div key={p} className={`live-step ${phase === p ? 'current' : ''} ${done[p] ? 'done' : ''}`}>
@@ -505,44 +510,6 @@ function App() {
             value={phase === 'upload' ? liveUl : uploadSpeed} active={phase === 'upload'}
             isFinal={done.upload && phase !== 'upload'} prev={prevResult?.upload}
           />
-        </div>
-
-        {/* ── NEW: network info strip ── */}
-        <div className="network-info">
-          {networkInfo ? (
-            <>
-              <span className="net-item">
-                <span className="net-icon">📡</span>
-                <strong>ISP:</strong>&nbsp;{networkInfo.isp || 'Unknown'}
-              </span>
-              <span className="net-divider" />
-              <span className="net-item">
-                <span className="net-icon">📍</span>
-                <strong>Location:</strong>&nbsp;{networkInfo.city || 'Unknown'}
-                {networkInfo.country ? `, ${networkInfo.country}` : ''}
-              </span>
-              <span className="net-divider" />
-              <span className="net-item">
-                <span className="net-icon">🌍</span>
-                <strong>Server:</strong>&nbsp;{networkInfo.server_location || 'Unknown'}
-              </span>
-              <span className="net-divider" />
-              <span className="net-item">
-                <span className="net-icon">🔗</span>
-                <strong>IP:</strong>&nbsp;{networkInfo.ip || 'Unknown'}
-              </span>
-            </>
-          ) : (
-            <span className="net-item net-muted">
-              {isFetchingInfo ? (
-                <>
-                  <span className="net-spinner" /> Detecting network…
-                </>
-              ) : (
-                'Network info unavailable'
-              )}
-            </span>
-          )}
         </div>
 
         <div className="cta-wrap">
