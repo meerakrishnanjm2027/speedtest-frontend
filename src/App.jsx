@@ -32,6 +32,18 @@ const uploadWithProgress = (url, formData, onProgress) =>
     xhr.send(formData);
   });
 
+// NEW: fetch REAL user IP from browser (frontend-only API)
+const fetchUserIp = async () => {
+  try {
+    const res = await fetch('https://api.ipify.org?format=json');
+    const data = await res.json();
+    return data.ip;
+  } catch (error) {
+    console.error('Failed to get user IP:', error);
+    return null;
+  }
+};
+
 // Saved choice → system preference on first load → light
 const initialTheme = () => {
   try {
@@ -325,10 +337,19 @@ function App() {
     return () => clearInterval(id);
   }, [isTesting]);
 
+  /* ── UPDATED: fetch real user IP → then ISP/City lookup ── */
   const fetchNetworkInfo = useCallback(async () => {
     setIsFetchingInfo(true);
     try {
-      const res = await fetch(`${API_URL}/network-info`);
+      // Step 1: Get the USER'S real IP from the browser
+      const userIp = await fetchUserIp();
+
+      // Step 2: Pass that IP to the backend for ISP/City lookup
+      const url = userIp
+        ? `${API_URL}/network-info?client_ip=${encodeURIComponent(userIp)}`
+        : `${API_URL}/network-info`;
+
+      const res = await fetch(url);
       const data = await res.json();
       setNetworkInfo(data);
     } catch (error) {
@@ -470,14 +491,14 @@ function App() {
           <p>Measure ping, download and upload in a few seconds.</p>
         </section>
 
-        {/* ── REPLACED: custom network info block ── */}
+        {/* ── Network info block ── */}
         <div style={{ marginBottom: '20px', fontSize: '14px', color: '#666' }}>
-          {networkInfo && networkInfo.ip !== "Unavailable" ? (
+          {networkInfo && networkInfo.ip !== 'Unavailable' ? (
             <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
-              <span>📡 <strong>ISP:</strong> {networkInfo.isp || "Detecting..."}</span>
-              <span> <strong>IP:</strong> {networkInfo.ip || "Detecting..."}</span>
+              <span>📡 <strong>ISP:</strong> {networkInfo.isp || 'Detecting...'}</span>
+              <span><strong>IP:</strong> {networkInfo.ip || 'Detecting...'}</span>
               <span>📍 <strong>Location:</strong>{' '}
-                {[networkInfo.city, networkInfo.country].filter(Boolean).join(", ") || "Detecting..."}
+                {[networkInfo.city, networkInfo.country].filter(Boolean).join(', ') || 'Detecting...'}
               </span>
             </div>
           ) : (
