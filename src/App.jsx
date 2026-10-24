@@ -1,4 +1,3 @@
-// App.jsx
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './App.css';
 
@@ -31,18 +30,6 @@ const uploadWithProgress = (url, formData, onProgress) =>
     xhr.open('POST', url);
     xhr.send(formData);
   });
-
-// NEW: fetch REAL user IP from browser (frontend-only API)
-const fetchUserIp = async () => {
-  try {
-    const res = await fetch('https://api.ipify.org?format=json');
-    const data = await res.json();
-    return data.ip;
-  } catch (error) {
-    console.error('Failed to get user IP:', error);
-    return null;
-  }
-};
 
 // Saved choice → system preference on first load → light
 const initialTheme = () => {
@@ -337,23 +324,33 @@ function App() {
     return () => clearInterval(id);
   }, [isTesting]);
 
-  /* ── UPDATED: fetch real user IP → then ISP/City lookup ── */
+  // ✅ NEW: Fetch REAL user IP from browser, then pass to backend
   const fetchNetworkInfo = useCallback(async () => {
     setIsFetchingInfo(true);
     try {
-      // Step 1: Get the USER'S real IP from the browser
-      const userIp = await fetchUserIp();
+      // Step 1: Get the USER'S real public IP from browser
+      const ipRes = await fetch('https://api.ipify.org?format=json');
+      const ipData = await ipRes.json();
+      const userIp = ipData.ip;
 
-      // Step 2: Pass that IP to the backend for ISP/City lookup
-      const url = userIp
-        ? `${API_URL}/network-info?client_ip=${encodeURIComponent(userIp)}`
+      // Step 2: Pass that IP to YOUR backend for ISP/City lookup
+      const url = userIp 
+        ? `${API_URL}/network-info?client_ip=${userIp}`
         : `${API_URL}/network-info`;
-
+        
       const res = await fetch(url);
       const data = await res.json();
       setNetworkInfo(data);
     } catch (error) {
       console.error('Failed to fetch network info:', error);
+      // Fallback: try without IP parameter
+      try {
+        const res = await fetch(`${API_URL}/network-info`);
+        const data = await res.json();
+        setNetworkInfo(data);
+      } catch (e) {
+        console.error('Fallback also failed:', e);
+      }
     } finally {
       setIsFetchingInfo(false);
     }
@@ -491,18 +488,20 @@ function App() {
           <p>Measure ping, download and upload in a few seconds.</p>
         </section>
 
-        {/* ── Network info block ── */}
+        {/* ✅ UPDATED: Network Info Block with Real IP */}
         <div style={{ marginBottom: '20px', fontSize: '14px', color: '#666' }}>
-          {networkInfo && networkInfo.ip !== 'Unavailable' ? (
+          {isFetchingInfo ? (
+            <span>⏳ Detecting your network...</span>
+          ) : networkInfo && networkInfo.ip !== "Unavailable" ? (
             <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
-              <span>📡 <strong>ISP:</strong> {networkInfo.isp || 'Detecting...'}</span>
-              <span><strong>IP:</strong> {networkInfo.ip || 'Detecting...'}</span>
+              <span>📡 <strong>ISP:</strong> {networkInfo.isp || "Detecting..."}</span>
+              <span>🔗 <strong>IP:</strong> {networkInfo.ip || "Detecting..."}</span>
               <span>📍 <strong>Location:</strong>{' '}
-                {[networkInfo.city, networkInfo.country].filter(Boolean).join(', ') || 'Detecting...'}
+                {[networkInfo.city, networkInfo.country].filter(Boolean).join(", ") || "Detecting..."}
               </span>
             </div>
           ) : (
-            <span>⚠️ Network info unavailable. Retrying...</span>
+            <span>️ Network info unavailable. Retrying...</span>
           )}
         </div>
 
