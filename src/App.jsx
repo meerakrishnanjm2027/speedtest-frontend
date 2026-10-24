@@ -324,36 +324,63 @@ function App() {
     return () => clearInterval(id);
   }, [isTesting]);
 
-  // ✅ NEW: Fetch REAL user IP from browser, then pass to backend
+  // ✅ REPLACED: Robust IP fetching with WebRTC fallback
   const fetchNetworkInfo = useCallback(async () => {
     setIsFetchingInfo(true);
-    try {
-      // Step 1: Get the USER'S real public IP from browser
-      const ipRes = await fetch('https://api.ipify.org?format=json');
-      const ipData = await ipRes.json();
-      const userIp = ipData.ip;
+    let userIp = null;
 
-      // Step 2: Pass that IP to YOUR backend for ISP/City lookup
-      const url = userIp 
-        ? `${API_URL}/network-info?client_ip=${userIp}`
-        : `${API_URL}/network-info`;
-        
-      const res = await fetch(url);
-      const data = await res.json();
-      setNetworkInfo(data);
-    } catch (error) {
-      console.error('Failed to fetch network info:', error);
-      // Fallback: try without IP parameter
+    try {
+      // Method 1: Try ipify first
+      const ipRes = await fetch('https://api.ipify.org?format=json', { 
+        signal: AbortSignal.timeout(3000) // 3s timeout
+      });
+      const ipData = await ipRes.json();
+      userIp = ipData.ip;
+    } catch (e) {
+      console.warn("ipify failed, trying fallback...", e);
+      
+      // Method 2: Fallback using WebRTC (works even if APIs are blocked)
       try {
-        const res = await fetch(`${API_URL}/network-info`);
+        const pc = new RTCPeerConnection({ iceServers: [] });
+        pc.createDataChannel("");
+        pc.createOffer().then(o => pc.setLocalDescription(o));
+        
+        await new Promise((resolve) => {
+          pc.onicecandidate = (ice) => {
+            if (!ice || !ice.candidate || !ice.candidate.candidate) return resolve();
+            const myIP = /([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})/.exec(ice.candidate.candidate)?.[1];
+            if (myIP && myIP !== "127.0.0.1") {
+              userIp = myIP;
+              resolve();
+            }
+          };
+          setTimeout(resolve, 2000); // Safety timeout
+        });
+        pc.close();
+      } catch (webrtcErr) {
+        console.error("WebRTC fallback also failed:", webrtcErr);
+      }
+    }
+
+    console.log(`[FRONTEND] Detected User IP: ${userIp}`);
+
+    // ✅ CRITICAL: Only call backend if we HAVE an IP
+    if (userIp) {
+      try {
+        const url = `${API_URL}/network-info?client_ip=${encodeURIComponent(userIp)}`;
+        console.log(`[FRONTEND] Calling: ${url}`);
+        const res = await fetch(url);
         const data = await res.json();
         setNetworkInfo(data);
-      } catch (e) {
-        console.error('Fallback also failed:', e);
+      } catch (error) {
+        console.error('Backend lookup failed:', error);
       }
-    } finally {
-      setIsFetchingInfo(false);
+    } else {
+      console.error("[FRONTEND] Could not detect user IP");
+      setNetworkInfo({ ip: "Detection Failed", isp: "Check AdBlocker", city: "" });
     }
+    
+    setIsFetchingInfo(false);
   }, []);
 
   useEffect(() => {
